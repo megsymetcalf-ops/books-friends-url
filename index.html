@@ -1373,6 +1373,9 @@ To Kill a Mockingbird by Harper Lee"></textarea>
         async function saveLoginConfig() {
             const email = document.getElementById('userEmail').value.trim();
             
+            console.log('=== LOGIN DEBUG ===');
+            console.log('Email entered:', email);
+            
             if (!email) {
                 alert('Please enter your email address.');
                 return;
@@ -1382,6 +1385,8 @@ To Kill a Mockingbird by Harper Lee"></textarea>
             
             // Check if this is first-time setup
             const isFirstTime = data.members.length === 0 && document.getElementById('loginIsAdminCheckbox').checked;
+            console.log('Is first time setup?', isFirstTime);
+            console.log('Current members count:', data.members.length);
             
             if (isFirstTime) {
                 // First-time admin setup
@@ -1394,6 +1399,9 @@ To Kill a Mockingbird by Harper Lee"></textarea>
                 userConfig.isAdmin = true;
             } else {
                 // Regular login - first, try to load latest data from GitHub
+                console.log('Shared config exists?', !!data.sharedConfig);
+                console.log('Shared token exists?', !!(data.sharedConfig && data.sharedConfig.sharedToken));
+                
                 if (data.sharedConfig && data.sharedConfig.sharedToken) {
                     // Show loading message
                     updateSyncStatus('syncing', 'Loading member list...');
@@ -1404,23 +1412,44 @@ To Kill a Mockingbird by Harper Lee"></textarea>
                     
                     try {
                         // Load the latest member list from GitHub
+                        console.log('Attempting to load from GitHub...');
                         await loadFromGithub(true);
+                        console.log('Data loaded. Members count now:', data.members.length);
+                        console.log('All member emails:', data.members.map(m => m.email));
                         updateSyncStatus('success', 'Member list loaded');
                     } catch (error) {
                         console.error('Error loading member list:', error);
                         updateSyncStatus('error', 'Could not load data');
-                        alert('Could not load member list from the cloud. Please check your internet connection and try again.');
+                        alert('Could not load member list from the cloud. Please check your internet connection and try again.\n\nError: ' + error.message);
                         return;
                     }
                     
                     userConfig.isAdmin = wasAdmin;
+                } else {
+                    console.log('WARNING: No shared config or token available!');
+                    alert('Setup incomplete: The shared access token has not been configured yet. Please contact your administrator.');
+                    return;
                 }
                 
                 // Now check if user exists in members list
-                const member = data.members.find(m => m.email && m.email.toLowerCase() === email.toLowerCase());
+                console.log('Searching for email:', email.toLowerCase());
+                const member = data.members.find(m => {
+                    console.log('Checking member:', m.email, 'against', email);
+                    return m.email && m.email.toLowerCase() === email.toLowerCase();
+                });
+                
+                console.log('Member found?', !!member);
+                if (member) {
+                    console.log('Member details:', member);
+                }
                 
                 if (!member) {
-                    alert('Your email address is not in the members list. Please ask an administrator to add you as a member first.\n\nEmail you entered: ' + email + '\n\nMake sure this email matches exactly what the admin entered for you.');
+                    const memberList = data.members.map(m => m.email).join(', ');
+                    alert('Your email address is not in the members list.\n\n' +
+                          'Email you entered: ' + email + '\n\n' +
+                          'Current members in system: ' + (memberList || 'None') + '\n\n' +
+                          'Please ask an administrator to add you as a member first.\n' +
+                          'Make sure your email matches exactly what the admin entered for you.');
                     return;
                 }
                 
@@ -1448,6 +1477,7 @@ To Kill a Mockingbird by Harper Lee"></textarea>
             updateLoginStatus();
             updateClubName();
             
+            console.log('Login successful! User is admin?', userConfig.isAdmin);
             alert(`Logged in successfully as ${userConfig.isAdmin ? 'Administrator' : 'Standard User'}!`);
             
             // Start auto-sync
