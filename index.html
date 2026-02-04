@@ -651,20 +651,28 @@
             </div>
 
             <div class="form-group" id="adminTokenContainer" style="display: none;">
-                <label>Your Personal GitHub Token (Admin Only) *</label>
+                <label>Your Personal GitHub Token (Admin Only)</label>
                 <input type="password" id="adminGithubToken" placeholder="ghp_xxxxxxxxxxxx">
                 <small style="color: #6c757d; display: block; margin-top: 5px;">
-                    As an admin, you need your own token to configure settings. This is separate from the shared token.
+                    As an admin, you can optionally use your own token for admin operations.
+                </small>
+            </div>
+
+            <div class="form-group" id="sharedTokenContainer" style="display: none;">
+                <label>Shared Access Token (First-Time Setup Only) *</label>
+                <input type="password" id="sharedTokenInput" placeholder="ghp_xxxxxxxxxxxx">
+                <small style="color: #6c757d; display: block; margin-top: 5px;">
+                    This is the GitHub token that all members will use. You only need to enter this once during initial setup.
                 </small>
             </div>
 
             <div class="form-group" id="adminCheckboxContainer">
                 <label>
                     <input type="checkbox" id="loginIsAdminCheckbox" onchange="toggleAdminModeLogin()">
-                    I am the initial administrator (first-time setup only)
+                    I am setting up the club for the first time
                 </label>
                 <small style="color: #6c757d; display: block; margin-top: 5px;">
-                    Only check this if you're setting up the club for the first time. Once members exist, admin status is determined by the Members list.
+                    Only check this if you're the very first person setting up the club. You'll need to enter the shared token and configure the repository.
                 </small>
             </div>
 
@@ -1389,14 +1397,26 @@ To Kill a Mockingbird by Harper Lee"></textarea>
             console.log('Current members count:', data.members.length);
             
             if (isFirstTime) {
-                // First-time admin setup
-                const adminToken = document.getElementById('adminGithubToken').value.trim();
-                if (!adminToken) {
-                    alert('As the initial admin, you need to enter your personal GitHub token.');
+                // First-time admin setup - need shared token
+                const sharedToken = document.getElementById('sharedTokenInput').value.trim();
+                if (!sharedToken) {
+                    alert('Please enter the shared access token for first-time setup.');
                     return;
                 }
-                userConfig.adminToken = adminToken;
+                
+                // Store the shared token temporarily so we can use it
+                userConfig.adminToken = sharedToken;
                 userConfig.isAdmin = true;
+                
+                console.log('First-time setup: shared token provided');
+                
+                // Now need to go to Admin Setup to configure repository
+                alert('Setup Step 1 Complete!\n\nNext, go to the "Admin Setup" tab (far right) to configure your GitHub repository details.\n\nThen come back to Login tab and add yourself as the first member.');
+                
+                localStorage.setItem('bookClubUserConfig', JSON.stringify(userConfig));
+                updateAdminUI();
+                updateLoginStatus();
+                return;
             } else {
                 // Regular login - first, try to load latest data from GitHub
                 console.log('Shared config exists?', !!data.sharedConfig);
@@ -1427,7 +1447,7 @@ To Kill a Mockingbird by Harper Lee"></textarea>
                     userConfig.isAdmin = wasAdmin;
                 } else {
                     console.log('WARNING: No shared config or token available!');
-                    alert('Setup incomplete: The shared access token has not been configured yet. Please contact your administrator.');
+                    alert('Setup incomplete: The club needs to be set up first.\n\nIf you\'re the first person using this app:\n1. Check the "I am setting up the club for the first time" box\n2. Enter your email and the shared GitHub token\n3. Follow the setup instructions\n\nIf someone else should set this up, ask them to complete the initial configuration.');
                     return;
                 }
                 
@@ -1487,12 +1507,17 @@ To Kill a Mockingbird by Harper Lee"></textarea>
         }
 
         function toggleAdminModeLogin() {
-            userConfig.isAdmin = document.getElementById('loginIsAdminCheckbox').checked;
+            const isFirstTimeSetup = document.getElementById('loginIsAdminCheckbox').checked;
             const adminTokenContainer = document.getElementById('adminTokenContainer');
+            const sharedTokenContainer = document.getElementById('sharedTokenContainer');
             
-            if (userConfig.isAdmin) {
-                adminTokenContainer.style.display = 'block';
+            if (isFirstTimeSetup) {
+                // First-time setup: show shared token field
+                sharedTokenContainer.style.display = 'block';
+                adminTokenContainer.style.display = 'none';
             } else {
+                // Regular login: hide both
+                sharedTokenContainer.style.display = 'none';
                 adminTokenContainer.style.display = 'none';
             }
             
