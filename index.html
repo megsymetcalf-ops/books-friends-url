@@ -599,18 +599,19 @@
             
             <div class="info-box">
                 <h4>🔄 Sync Status</h4>
-                <p>The app automatically syncs with GitHub every 30 seconds when you're connected.</p>
+                <p>The app automatically syncs with the cloud every 30 seconds when you're connected.</p>
                 <p style="margin-top: 10px;"><strong>Current Status:</strong></p>
                 <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
                     <div class="sync-indicator" id="syncIndicatorLogin"></div>
                     <span id="syncStatusLogin" style="font-weight: bold;">Checking...</span>
                 </div>
-                <p style="margin-top: 15px;"><strong>Sync Indicator Colors:</strong></p>
+                <p style="margin-top: 15px;"><strong>Status Indicators:</strong></p>
                 <ul style="margin-left: 20px; margin-top: 5px;">
                     <li>🟢 Green = Successfully synced</li>
                     <li>🟡 Yellow = Syncing in progress</li>
-                    <li>🔴 Red = Sync failed (check your token)</li>
+                    <li>🔴 Red = Sync failed</li>
                 </ul>
+                <p style="margin-top: 15px;"><small>Use the "Refresh Data" button below if you want to manually check for updates, or "Save Data" to force a save.</small></p>
             </div>
 
             <div class="success-box" id="sharedConfigLoadedBox" style="display: none;">
@@ -668,8 +669,8 @@
             </div>
 
             <button class="btn" onclick="saveLoginConfig()">Log In</button>
-            <button class="btn btn-secondary" onclick="loadFromGithub()">Manual Sync: Load from GitHub</button>
-            <button class="btn btn-secondary" onclick="saveToGithub()">Manual Sync: Save to GitHub</button>
+            <button class="btn btn-secondary" onclick="loadFromGithub()">Refresh Data</button>
+            <button class="btn btn-secondary" onclick="saveToGithub()">Save Data</button>
 
             <div class="info-box" style="margin-top: 30px;">
                 <h4>📖 Getting Started</h4>
@@ -1369,7 +1370,7 @@ To Kill a Mockingbird by Harper Lee"></textarea>
             }
         }
 
-        function saveLoginConfig() {
+        async function saveLoginConfig() {
             const email = document.getElementById('userEmail').value.trim();
             
             if (!email) {
@@ -1392,11 +1393,34 @@ To Kill a Mockingbird by Harper Lee"></textarea>
                 userConfig.adminToken = adminToken;
                 userConfig.isAdmin = true;
             } else {
-                // Regular login - check if user exists in members list
+                // Regular login - first, try to load latest data from GitHub
+                if (data.sharedConfig && data.sharedConfig.sharedToken) {
+                    // Show loading message
+                    updateSyncStatus('syncing', 'Loading member list...');
+                    
+                    // Temporarily set user as non-admin to use shared token for loading
+                    const wasAdmin = userConfig.isAdmin;
+                    userConfig.isAdmin = false;
+                    
+                    try {
+                        // Load the latest member list from GitHub
+                        await loadFromGithub(true);
+                        updateSyncStatus('success', 'Member list loaded');
+                    } catch (error) {
+                        console.error('Error loading member list:', error);
+                        updateSyncStatus('error', 'Could not load data');
+                        alert('Could not load member list from the cloud. Please check your internet connection and try again.');
+                        return;
+                    }
+                    
+                    userConfig.isAdmin = wasAdmin;
+                }
+                
+                // Now check if user exists in members list
                 const member = data.members.find(m => m.email && m.email.toLowerCase() === email.toLowerCase());
                 
                 if (!member) {
-                    alert('Your email address is not in the members list. Please ask an administrator to add you as a member first.');
+                    alert('Your email address is not in the members list. Please ask an administrator to add you as a member first.\n\nEmail you entered: ' + email + '\n\nMake sure this email matches exactly what the admin entered for you.');
                     return;
                 }
                 
