@@ -1,0 +1,2900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Club Manager - Enhanced Cloud Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .cloud-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .admin-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,215,0,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .sync-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sync-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+        }
+
+        .sync-indicator.syncing {
+            background: #fbbf24;
+            animation: pulse 1s infinite;
+        }
+
+        .sync-indicator.error {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            overflow-x: auto;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #495057;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .book-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .book-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .book-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .book-info {
+            color: #6c757d;
+            margin: 5px 0;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+        }
+
+        .member-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .reading-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .reading-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .review-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .rating {
+            color: #ffc107;
+            font-size: 1.2em;
+        }
+
+        .transaction-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #28a745;
+        }
+
+        .transaction-item.expense {
+            border-left-color: #dc3545;
+        }
+
+        .reviews-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .reviews-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .reviews-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        .reviews-table th:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .reviews-table th::after {
+            content: ' ⇅';
+            opacity: 0.5;
+            font-size: 0.8em;
+        }
+
+        .reviews-table th.sort-asc::after {
+            content: ' ▲';
+            opacity: 1;
+        }
+
+        .reviews-table th.sort-desc::after {
+            content: ' ▼';
+            opacity: 1;
+        }
+
+        .reviews-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .reviews-table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .reviews-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .reviews-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .review-text-cell {
+            max-width: 400px;
+        }
+
+        .review-text-preview {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #495057;
+        }
+
+        .review-expand-btn {
+            color: #667eea;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .review-expand-btn:hover {
+            text-decoration: underline;
+        }
+
+        .review-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .reviews-table {
+                font-size: 0.9em;
+            }
+            
+            .reviews-table th,
+            .reviews-table td {
+                padding: 10px 8px;
+            }
+            
+            .review-text-cell {
+                max-width: 200px;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #6c757d;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #dc3545;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .error-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        #scanner-container {
+            max-width: 500px;
+            margin: 20px auto;
+        }
+
+        .isbn-lookup-container {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .import-area {
+            border: 2px dashed #e9ecef;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .import-area:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .balance-edit {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .editable-balance {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .editable-balance:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .admin-only {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .admin-only.enabled {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1 1 50%;
+            }
+            
+            .admin-badge, .sync-status {
+                position: static;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="sync-status">
+                <div class="sync-indicator" id="syncIndicator"></div>
+                <span id="syncStatus">Connected</span>
+            </div>
+            <div id="adminBadge" class="admin-badge" style="display: none;">
+                👑 Admin
+            </div>
+            <h1>
+                📚 <span id="clubNameDisplay">Book Club</span>
+                <button class="btn btn-small admin-only" onclick="editClubName()" style="font-size: 0.4em; padding: 5px 15px; margin-left: 10px; display: none;" id="editClubNameBtn">Edit Name</button>
+            </h1>
+            <div class="cloud-badge">☁️ Cloud Synced via GitHub</div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('login')">🔐 Login</button>
+            <button class="tab" onclick="switchTab('library')">📚 Library</button>
+            <button class="tab" onclick="switchTab('members')">👥 Members</button>
+            <button class="tab" onclick="switchTab('meetings')">📅 Meetings</button>
+            <button class="tab" onclick="switchTab('readings')">📖 Reading Log</button>
+            <button class="tab" onclick="switchTab('reviews')">⭐ Reviews</button>
+            <button class="tab" onclick="switchTab('finances')">💰 Finances</button>
+            <button class="tab" onclick="switchTab('setup')">⚙️ Admin Setup</button>
+        </div>
+
+        <!-- Login Tab -->
+        <div id="login" class="tab-content active">
+            <h2>Login & Sync</h2>
+            
+            <div class="info-box">
+                <h4>🔄 Sync Status</h4>
+                <p>The app automatically syncs with GitHub every 30 seconds when you're connected.</p>
+                <p style="margin-top: 10px;"><strong>Current Status:</strong></p>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                    <div class="sync-indicator" id="syncIndicatorLogin"></div>
+                    <span id="syncStatusLogin" style="font-weight: bold;">Checking...</span>
+                </div>
+                <p style="margin-top: 15px;"><strong>Sync Indicator Colors:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 5px;">
+                    <li>🟢 Green = Successfully synced</li>
+                    <li>🟡 Yellow = Syncing in progress</li>
+                    <li>🔴 Red = Sync failed (check your token)</li>
+                </ul>
+            </div>
+
+            <div class="warning-box">
+                <h4>👤 Important: Identifying Yourself</h4>
+                <p><strong>The app identifies you by your email address.</strong> Once you enter your email below, the app will:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Check if you exist as a member in the club</li>
+                    <li>Automatically determine if you have admin privileges</li>
+                    <li>Save your email locally so you don't have to re-enter it</li>
+                </ul>
+                <p style="margin-top: 10px;"><strong>Note:</strong> You must be added as a member by an admin before you can use the app. The first user to set up the repository becomes the initial admin.</p>
+            </div>
+
+            <div id="loginUserRoleInfo" style="margin-top: 20px;">
+                <div class="success-box" id="roleInfoBox" style="display: none;">
+                    <h4>✅ Logged in as: <span id="loginCurrentRole">Standard User</span></h4>
+                    <p id="roleDescription">You only need to enter your personal access token below.</p>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Your Email Address *</label>
+                <input type="email" id="userEmail" placeholder="your.email@example.com">
+                <small style="color: #6c757d; display: block; margin-top: 5px;">
+                    This identifies you as a member. You must be added to the Members list by an admin.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label>Your Personal Access Token *</label>
+                <input type="password" id="loginGithubToken" placeholder="ghp_xxxxxxxxxxxx">
+                <small style="color: #6c757d; display: block; margin-top: 5px;">
+                    This is stored locally on your device and never shared. Get one from GitHub: Settings → Developer settings → Personal access tokens
+                </small>
+            </div>
+
+            <div class="form-group" id="adminCheckboxContainer">
+                <label>
+                    <input type="checkbox" id="loginIsAdminCheckbox" onchange="toggleAdminModeLogin()">
+                    I am the initial administrator (first-time setup only)
+                </label>
+                <small style="color: #6c757d; display: block; margin-top: 5px;">
+                    Only check this if you're setting up the club for the first time. Once members exist, admin status is determined by the Members list.
+                </small>
+            </div>
+
+            <button class="btn" onclick="saveLoginConfig()">Save & Login</button>
+            <button class="btn btn-secondary" onclick="loadFromGithub()">Manual Sync: Load from GitHub</button>
+            <button class="btn btn-secondary" onclick="saveToGithub()">Manual Sync: Save to GitHub</button>
+
+            <div class="info-box" style="margin-top: 30px;">
+                <h4>📖 Getting Started</h4>
+                <p><strong>First time here?</strong></p>
+                <ol style="margin-left: 20px; margin-top: 10px;">
+                    <li>If you're an admin, check the "I am an administrator" box and go to the Admin Setup tab</li>
+                    <li>If you're a regular user, just enter your GitHub personal access token above</li>
+                    <li>Click "Save Token & Login" to connect</li>
+                    <li>The app will automatically sync your data with GitHub</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Library Tab -->
+        <div id="library" class="tab-content">
+            <h2>Book Library</h2>
+            
+            <div class="form-group">
+                <input type="text" id="librarySearch" placeholder="Search books..." oninput="filterLibrary()">
+            </div>
+
+            <button class="btn" onclick="showAddBookModal()">Add Book Manually</button>
+            <button class="btn btn-secondary" onclick="showISBNLookupModal()">Add by ISBN</button>
+            <button class="btn btn-secondary" onclick="showTitleLookupModal()">Add by Title</button>
+            <button class="btn btn-secondary" onclick="showImportBooksModal()">Import Book List</button>
+
+            <div id="bookList" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Members Tab -->
+        <div id="members" class="tab-content">
+            <h2>Club Members</h2>
+            
+            <button class="btn" onclick="showAddMemberModal()">Add Member</button>
+
+            <div id="membersList" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Meetings Tab -->
+        <div id="meetings" class="tab-content">
+            <h2>Book Club Meetings</h2>
+            
+            <button class="btn" onclick="showAddMeetingModal()">Schedule Meeting</button>
+
+            <h3 style="margin-top: 30px;">Upcoming Meetings</h3>
+            <div id="upcomingMeetings"></div>
+
+            <h3 style="margin-top: 30px;">Past Meetings</h3>
+            <div id="pastMeetings"></div>
+        </div>
+
+        <!-- Readings Tab -->
+        <div id="readings" class="tab-content">
+            <h2>Reading Log</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="totalReadings">0</h3>
+                    <p>Total Readings</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="uniqueBooks">0</h3>
+                    <p>Unique Books Read</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <input type="text" id="readingSearch" placeholder="Search readings..." oninput="filterReadings()">
+            </div>
+
+            <button class="btn" onclick="showAddReadingModal()">Log Reading</button>
+
+            <div id="readingList" class="reading-list" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Reviews Tab -->
+        <div id="reviews" class="tab-content">
+            <h2>Book Reviews</h2>
+            
+            <div class="form-group">
+                <input type="text" id="reviewSearch" placeholder="Search reviews..." oninput="filterReviews()">
+            </div>
+
+            <button class="btn" onclick="showAddReviewModal()">Write Review</button>
+
+            <div style="margin-top: 20px; overflow-x: auto;">
+                <table class="reviews-table" id="reviewsTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortReviews('book')">Book Title</th>
+                            <th onclick="sortReviews('reviewer')">Reviewer</th>
+                            <th onclick="sortReviews('rating')">Rating</th>
+                            <th>Review</th>
+                            <th onclick="sortReviews('date')">Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reviewsTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: #6c757d;">
+                                No reviews yet.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Finances Tab -->
+        <div id="finances" class="tab-content">
+            <h2>Club Finances</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="totalContributions">R 0.00</h3>
+                    <p>Total Contributions</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalExpenses">R 0.00</h3>
+                    <p>Total Expenses</p>
+                </div>
+                <div class="stat-card">
+                    <h3>
+                        <span id="balance">R 0.00</span>
+                        <button class="btn btn-small admin-only" id="editBalanceBtn" onclick="showEditBalanceModal()" style="margin-left: 10px; padding: 5px 10px; font-size: 0.5em;">Edit</button>
+                    </h3>
+                    <p>Current Balance</p>
+                </div>
+            </div>
+
+            <button class="btn" onclick="showAddTransactionModal()">Add Transaction</button>
+
+            <div id="transactionsList" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Admin Setup Tab -->
+        <div id="setup" class="tab-content">
+            <h2>Admin Configuration</h2>
+            
+            <div class="warning-box">
+                <h4>👑 Admin Only Section</h4>
+                <p>This tab is for administrators to configure the GitHub repository settings that will be shared with all users.</p>
+            </div>
+
+            <div class="info-box">
+                <h4>📖 Admin Setup Instructions</h4>
+                <ol style="margin-left: 20px; margin-top: 10px;">
+                    <li>Make sure you've checked "I am an administrator" in the Login tab</li>
+                    <li>Fill in your GitHub username, repository name, and file path below</li>
+                    <li>Click "Save Admin Settings" to share these settings with all users</li>
+                    <li>Go back to the Login tab and enter your personal access token</li>
+                    <li>You can grant admin rights to other users in the Members tab</li>
+                </ol>
+            </div>
+
+            <div class="form-group">
+                <label>GitHub Username</label>
+                <input type="text" id="githubUsername" placeholder="yourusername">
+            </div>
+
+            <div class="form-group">
+                <label>Repository Name</label>
+                <input type="text" id="repoName" placeholder="book-club-data">
+            </div>
+
+            <div class="form-group">
+                <label>File Path</label>
+                <input type="text" id="filePath" placeholder="data/bookclub.json" value="data/bookclub.json">
+            </div>
+
+            <button class="btn" onclick="saveSharedConfig()">Save Admin Settings</button>
+            
+            <div id="setupSuccessMessage" style="display: none; margin-top: 20px;" class="success-box">
+                <h4>✅ Settings Saved!</h4>
+                <p>Your admin settings have been saved. All users will now use these repository settings.</p>
+                <p style="margin-top: 10px;">Don't forget to go to the Login tab and enter your personal access token!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add Book Modal -->
+    <div id="addBookModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addBookModal')">&times;</span>
+            <h2>Add Book</h2>
+            <form onsubmit="addBook(event)">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" id="bookTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Author *</label>
+                    <input type="text" id="bookAuthor" required>
+                </div>
+                <div class="form-group">
+                    <label>ISBN</label>
+                    <input type="text" id="bookISBN">
+                </div>
+                <div class="form-group">
+                    <label>Genre</label>
+                    <input type="text" id="bookGenre">
+                </div>
+                <div class="form-group">
+                    <label>Year Published</label>
+                    <input type="number" id="bookYear">
+                </div>
+                <button type="submit" class="btn">Add Book</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Book Modal -->
+    <div id="editBookModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editBookModal')">&times;</span>
+            <h2>Edit Book</h2>
+            <form onsubmit="updateBook(event)">
+                <input type="hidden" id="editBookId">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" id="editBookTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Author *</label>
+                    <input type="text" id="editBookAuthor" required>
+                </div>
+                <div class="form-group">
+                    <label>ISBN</label>
+                    <input type="text" id="editBookISBN">
+                </div>
+                <div class="form-group">
+                    <label>Genre</label>
+                    <input type="text" id="editBookGenre">
+                </div>
+                <div class="form-group">
+                    <label>Year Published</label>
+                    <input type="number" id="editBookYear">
+                </div>
+                <button type="submit" class="btn">Update Book</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ISBN Lookup Modal -->
+    <div id="isbnLookupModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('isbnLookupModal')">&times;</span>
+            <h2>Add Book by ISBN</h2>
+            
+            <div class="info-box">
+                <p>Enter an ISBN number and we'll automatically fetch the book details for you.</p>
+            </div>
+
+            <div class="isbn-lookup-container">
+                <input type="text" id="isbnInput" placeholder="Enter ISBN (e.g., 9780141439518)">
+                <button class="btn" onclick="lookupISBN()">Look Up</button>
+            </div>
+
+            <div id="isbnResult" style="display: none;">
+                <div class="success-box">
+                    <h4>Book Found!</h4>
+                    <p><strong>Title:</strong> <span id="foundTitle"></span></p>
+                    <p><strong>Author:</strong> <span id="foundAuthor"></span></p>
+                    <p><strong>Published:</strong> <span id="foundYear"></span></p>
+                </div>
+                <button class="btn" onclick="addBookFromISBN()">Add This Book</button>
+            </div>
+
+            <div id="isbnError" style="display: none;" class="error-box">
+                <p>Book not found. Please try a different ISBN or add the book manually.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Title Lookup Modal -->
+    <div id="titleLookupModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('titleLookupModal')">&times;</span>
+            <h2>Add Book by Title</h2>
+            
+            <div class="info-box">
+                <p>Enter a book title and we'll try to automatically fetch the book details.</p>
+                <p style="margin-top: 10px;"><strong>Note:</strong> If the automatic lookup doesn't work, you'll be prompted to enter the author name manually.</p>
+            </div>
+
+            <div class="isbn-lookup-container">
+                <input type="text" id="titleInput" placeholder="Enter book title (e.g., Pride and Prejudice)">
+                <button class="btn" onclick="lookupTitle()">Look Up</button>
+            </div>
+
+            <div id="titleResult" style="display: none;">
+                <div class="success-box">
+                    <h4>Book Found!</h4>
+                    <p><strong>Title:</strong> <span id="foundTitleByTitle"></span></p>
+                    <p><strong>Author:</strong> <span id="foundAuthorByTitle"></span></p>
+                    <p><strong>Published:</strong> <span id="foundYearByTitle"></span></p>
+                    <p><strong>ISBN:</strong> <span id="foundISBNByTitle"></span></p>
+                </div>
+                <button class="btn" onclick="addBookFromTitle()">Add This Book</button>
+            </div>
+
+            <div id="titleError" style="display: none;" class="error-box">
+                <p>Could not automatically find this book. Click "Look Up" again to enter the author manually.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Books Modal -->
+    <div id="importBooksModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('importBooksModal')">&times;</span>
+            <h2>Import Book List</h2>
+            
+            <div class="info-box">
+                <h4>How to Import Books</h4>
+                <p>Paste a list of books in any of these formats:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Title by Author</strong> (e.g., "Pride and Prejudice by Jane Austen")</li>
+                    <li><strong>Title - Author</strong> (e.g., "1984 - George Orwell")</li>
+                    <li><strong>Just titles</strong> (one per line - we'll try to find author info)</li>
+                </ul>
+            </div>
+
+            <div class="form-group">
+                <label>Paste Book List (one per line)</label>
+                <textarea id="bookListInput" rows="10" placeholder="Pride and Prejudice by Jane Austen
+1984 by George Orwell
+To Kill a Mockingbird by Harper Lee"></textarea>
+            </div>
+
+            <button class="btn" onclick="importBooks()">Import Books</button>
+
+            <div id="importResult" style="display: none; margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div id="addMemberModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addMemberModal')">&times;</span>
+            <h2>Add Member</h2>
+            <form onsubmit="addMember(event)">
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" id="memberName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="memberEmail" required>
+                    <small style="color: #6c757d; display: block; margin-top: 5px;">
+                        This email will be used to identify the member when they log in.
+                    </small>
+                </div>
+                <div class="form-group admin-only" id="adminCheckboxGroup">
+                    <label>
+                        <input type="checkbox" id="memberIsAdmin">
+                        Grant admin privileges
+                    </label>
+                </div>
+                <button type="submit" class="btn">Add Member</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Member Modal -->
+    <div id="editMemberModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editMemberModal')">&times;</span>
+            <h2>Edit Member</h2>
+            <form onsubmit="updateMember(event)">
+                <input type="hidden" id="editMemberId">
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" id="editMemberName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="editMemberEmail" required>
+                    <small style="color: #6c757d; display: block; margin-top: 5px;">
+                        This email is used to identify the member when they log in.
+                    </small>
+                </div>
+                <div class="form-group admin-only">
+                    <label>
+                        <input type="checkbox" id="editMemberIsAdmin">
+                        Grant admin privileges
+                    </label>
+                </div>
+                <button type="submit" class="btn">Update Member</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Meeting Modal -->
+    <div id="addMeetingModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addMeetingModal')">&times;</span>
+            <h2>Schedule Meeting</h2>
+            <form onsubmit="addMeeting(event)">
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="meetingDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Time (optional)</label>
+                    <input type="time" id="meetingTime">
+                </div>
+                <div class="form-group">
+                    <label>Host *</label>
+                    <select id="meetingHost" required>
+                        <option value="">Select a member...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Book (optional)</label>
+                    <select id="meetingBook">
+                        <option value="">No specific book</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="meetingLocation" placeholder="e.g., Jane's House, Zoom, Coffee Shop">
+                </div>
+                <button type="submit" class="btn">Schedule Meeting</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Reading Modal -->
+    <div id="addReadingModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addReadingModal')">&times;</span>
+            <h2>Log Reading</h2>
+
+            <div class="info-box">
+                <h4>Quick Actions Available</h4>
+                <p>After logging a reading, you can quickly add a review or mark the book from the library view.</p>
+            </div>
+
+            <form onsubmit="addReading(event)">
+                <div class="form-group">
+                    <label>Member *</label>
+                    <select id="readingMember" required>
+                        <option value="">Select a member...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Book *</label>
+                    <select id="readingBook" required>
+                        <option value="">Select a book...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date Completed *</label>
+                    <input type="date" id="readingDate" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="addReviewCheckbox">
+                        Add a review now
+                    </label>
+                </div>
+                <button type="submit" class="btn">Log Reading</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Review Modal -->
+    <div id="addReviewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addReviewModal')">&times;</span>
+            <h2>Write Review</h2>
+            <form onsubmit="addReview(event)">
+                <div class="form-group">
+                    <label>Member *</label>
+                    <select id="reviewMember" required>
+                        <option value="">Select a member...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Book *</label>
+                    <select id="reviewBook" required>
+                        <option value="">Select a book...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Rating *</label>
+                    <select id="reviewRating" required>
+                        <option value="">Select rating...</option>
+                        <option value="1">⭐ 1 - Poor</option>
+                        <option value="2">⭐⭐ 2 - Fair</option>
+                        <option value="3">⭐⭐⭐ 3 - Good</option>
+                        <option value="4">⭐⭐⭐⭐ 4 - Very Good</option>
+                        <option value="5">⭐⭐⭐⭐⭐ 5 - Excellent</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Review *</label>
+                    <textarea id="reviewText" required placeholder="Share your thoughts about the book..."></textarea>
+                </div>
+                <button type="submit" class="btn">Submit Review</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Transaction Modal -->
+    <div id="addTransactionModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addTransactionModal')">&times;</span>
+            <h2>Add Transaction</h2>
+            <form onsubmit="addTransaction(event)">
+                <div class="form-group">
+                    <label>Type *</label>
+                    <select id="transactionType" required>
+                        <option value="">Select type...</option>
+                        <option value="contribution">Contribution (+)</option>
+                        <option value="expense">Expense (-)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Member *</label>
+                    <select id="transactionMember" required>
+                        <option value="">Select a member...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Amount (R) *</label>
+                    <input type="number" id="transactionAmount" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Description *</label>
+                    <input type="text" id="transactionDescription" required placeholder="e.g., Monthly dues, Book purchase">
+                </div>
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="transactionDate" required>
+                </div>
+                <button type="submit" class="btn">Add Transaction</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Balance Modal -->
+    <div id="editBalanceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editBalanceModal')">&times;</span>
+            <h2>Edit Balance</h2>
+            
+            <div class="warning-box">
+                <h4>⚠️ Admin Only</h4>
+                <p>This will adjust the balance by adding a manual adjustment transaction. Use this to correct errors or set an initial balance.</p>
+            </div>
+
+            <form onsubmit="editBalance(event)">
+                <div class="form-group">
+                    <label>Current Balance</label>
+                    <input type="text" id="currentBalanceDisplay" readonly>
+                </div>
+                <div class="form-group">
+                    <label>New Balance (R) *</label>
+                    <input type="number" id="newBalance" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Reason for Adjustment *</label>
+                    <input type="text" id="balanceReason" required placeholder="e.g., Initial balance, Correction">
+                </div>
+                <button type="submit" class="btn">Update Balance</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Data structure
+        let data = {
+            clubName: 'Book Club',  // Default name, can be changed by admin
+            books: [],
+            members: [],
+            meetings: [],
+            readings: [],
+            reviews: [],
+            transactions: [],
+            sharedConfig: null,  // Admin-configured settings
+            nextId: {
+                book: 1,
+                member: 1,
+                meeting: 1,
+                reading: 1,
+                review: 1,
+                transaction: 1
+            }
+        };
+
+        // User-specific configuration
+        let userConfig = {
+            email: '',
+            token: '',
+            isAdmin: false
+        };
+
+        // Review sorting state
+        let reviewSortColumn = 'date';
+        let reviewSortDirection = 'desc';
+
+        // Initialize app
+        function initializeApp() {
+            loadLocalConfig();
+            loadLocalData();
+            updateAllViews();
+            updateAdminUI();
+            updateClubName();
+            
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('meetingDate').value = today;
+            document.getElementById('readingDate').value = today;
+            document.getElementById('transactionDate').value = today;
+
+            // Try to auto-sync if configured
+            if (isConfigured()) {
+                autoSync();
+            }
+        }
+
+        // Auto-sync functionality
+        let autoSyncInterval;
+        function autoSync() {
+            // Initial load
+            loadFromGithub(true);
+            
+            // Set up periodic sync every 30 seconds
+            if (autoSyncInterval) clearInterval(autoSyncInterval);
+            autoSyncInterval = setInterval(() => {
+                loadFromGithub(true);
+            }, 30000);
+        }
+
+        function updateSyncStatus(status, message) {
+            const indicator = document.getElementById('syncIndicator');
+            const statusText = document.getElementById('syncStatus');
+            
+            indicator.className = 'sync-indicator';
+            
+            if (status === 'syncing') {
+                indicator.classList.add('syncing');
+                statusText.textContent = message || 'Syncing...';
+            } else if (status === 'success') {
+                statusText.textContent = message || 'Synced';
+                setTimeout(() => {
+                    if (statusText.textContent === (message || 'Synced')) {
+                        statusText.textContent = 'Connected';
+                    }
+                }, 2000);
+            } else if (status === 'error') {
+                indicator.classList.add('error');
+                statusText.textContent = message || 'Sync Error';
+            }
+            
+            // Sync to login tab
+            syncLoginIndicators();
+        }
+
+        // Configuration management
+        function loadLocalConfig() {
+            const saved = localStorage.getItem('bookClubUserConfig');
+            if (saved) {
+                userConfig = JSON.parse(saved);
+                document.getElementById('userEmail').value = userConfig.email || '';
+                document.getElementById('loginGithubToken').value = userConfig.token || '';
+                document.getElementById('loginIsAdminCheckbox').checked = userConfig.isAdmin || false;
+            }
+
+            // Load shared config
+            const sharedSaved = localStorage.getItem('bookClubSharedConfig');
+            if (sharedSaved) {
+                data.sharedConfig = JSON.parse(sharedSaved);
+                if (data.sharedConfig) {
+                    document.getElementById('githubUsername').value = data.sharedConfig.username || '';
+                    document.getElementById('repoName').value = data.sharedConfig.repo || '';
+                    document.getElementById('filePath').value = data.sharedConfig.path || '';
+                }
+            }
+        }
+
+        function saveLoginConfig() {
+            const email = document.getElementById('userEmail').value.trim();
+            const token = document.getElementById('loginGithubToken').value.trim();
+            
+            if (!email) {
+                alert('Please enter your email address.');
+                return;
+            }
+            
+            if (!token) {
+                alert('Please enter your GitHub personal access token.');
+                return;
+            }
+            
+            userConfig.email = email;
+            userConfig.token = token;
+            
+            // Check if this is first-time setup
+            const isFirstTime = data.members.length === 0 && document.getElementById('loginIsAdminCheckbox').checked;
+            
+            if (isFirstTime) {
+                userConfig.isAdmin = true;
+            } else {
+                // Look up user in members list
+                const member = data.members.find(m => m.email && m.email.toLowerCase() === email.toLowerCase());
+                
+                if (!member) {
+                    alert('Your email address is not in the members list. Please ask an administrator to add you as a member first.');
+                    return;
+                }
+                
+                // Set admin status based on member record
+                userConfig.isAdmin = member.isAdmin || false;
+            }
+            
+            localStorage.setItem('bookClubUserConfig', JSON.stringify(userConfig));
+            
+            updateAdminUI();
+            updateLoginStatus();
+            updateClubName();
+            
+            alert(`Logged in successfully as ${userConfig.isAdmin ? 'Administrator' : 'Standard User'}!`);
+            
+            // Start auto-sync
+            if (isConfigured()) {
+                autoSync();
+            }
+        }
+
+        function toggleAdminModeLogin() {
+            userConfig.isAdmin = document.getElementById('loginIsAdminCheckbox').checked;
+            updateAdminUI();
+            updateLoginStatus();
+        }
+
+        function updateLoginStatus() {
+            const isAdmin = userConfig.isAdmin;
+            const hasToken = userConfig.token && userConfig.token.length > 0;
+            const hasSharedConfig = data.sharedConfig && data.sharedConfig.username;
+            
+            const roleBox = document.getElementById('roleInfoBox');
+            const roleText = document.getElementById('loginCurrentRole');
+            const roleDescription = document.getElementById('roleDescription');
+            const adminCheckboxContainer = document.getElementById('adminCheckboxContainer');
+            
+            // Hide admin checkbox if shared config exists and user is not already admin
+            if (hasSharedConfig && !isAdmin) {
+                adminCheckboxContainer.style.display = 'none';
+            } else {
+                adminCheckboxContainer.style.display = 'block';
+            }
+            
+            if (hasToken || isAdmin) {
+                roleBox.style.display = 'block';
+                roleText.textContent = isAdmin ? 'Administrator' : 'Standard User';
+                
+                if (isAdmin) {
+                    roleDescription.textContent = 'As an admin, configure your repository settings in the Admin Setup tab.';
+                } else if (hasSharedConfig) {
+                    roleDescription.textContent = 'You only need to enter your personal access token above. The admin has configured the repository for everyone.';
+                } else {
+                    roleDescription.textContent = 'Waiting for admin to configure repository settings. Enter your token now and you\'ll be ready when they do.';
+                }
+            } else {
+                roleBox.style.display = 'none';
+            }
+            
+            // Update login sync indicators
+            syncLoginIndicators();
+        }
+
+        function syncLoginIndicators() {
+            const mainIndicator = document.getElementById('syncIndicator');
+            const loginIndicator = document.getElementById('syncIndicatorLogin');
+            const mainStatus = document.getElementById('syncStatus');
+            const loginStatus = document.getElementById('syncStatusLogin');
+            
+            if (loginIndicator && loginStatus) {
+                loginIndicator.className = mainIndicator.className;
+                loginStatus.textContent = mainStatus.textContent;
+            }
+        }
+
+        function editClubName() {
+            if (!userConfig.isAdmin) {
+                alert('Only administrators can edit the club name.');
+                return;
+            }
+            
+            const currentName = data.clubName || 'Book Club';
+            const newName = prompt('Enter the new club name:', currentName);
+            
+            if (newName && newName.trim() !== '') {
+                data.clubName = newName.trim();
+                updateClubName();
+                saveLocalData();
+                saveToGithub();
+                alert('Club name updated successfully!');
+            }
+        }
+
+        function updateClubName() {
+            const displayElement = document.getElementById('clubNameDisplay');
+            if (displayElement) {
+                displayElement.textContent = data.clubName || 'Book Club';
+            }
+        }
+
+        function saveSharedConfig() {
+            if (!userConfig.isAdmin) {
+                alert('Only administrators can save shared configuration.');
+                return;
+            }
+
+            const sharedConfig = {
+                username: document.getElementById('githubUsername').value,
+                repo: document.getElementById('repoName').value,
+                path: document.getElementById('filePath').value
+            };
+
+            data.sharedConfig = sharedConfig;
+            localStorage.setItem('bookClubSharedConfig', JSON.stringify(sharedConfig));
+            
+            // Show success message
+            document.getElementById('setupSuccessMessage').style.display = 'block';
+            
+            // Save to GitHub so other users can access it
+            saveToGithub();
+            
+            alert('Admin settings saved and will be shared with all users!');
+        }
+
+        function updateAdminUI() {
+            const isAdmin = userConfig.isAdmin;
+            const hasSharedConfig = data.sharedConfig && data.sharedConfig.username;
+            
+            // Show/hide admin badge
+            document.getElementById('adminBadge').style.display = isAdmin ? 'block' : 'none';
+            
+            // Show/hide club name edit button
+            const editClubNameBtn = document.getElementById('editClubNameBtn');
+            if (editClubNameBtn) {
+                editClubNameBtn.style.display = isAdmin ? 'inline-block' : 'none';
+            }
+            
+            // Enable/disable admin-only features
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => {
+                if (isAdmin) {
+                    el.classList.add('enabled');
+                } else {
+                    el.classList.remove('enabled');
+                }
+            });
+            
+            // Update login tab status
+            updateLoginStatus();
+        }
+
+        function isConfigured() {
+            if (!userConfig.token) return false;
+            
+            if (userConfig.isAdmin) {
+                return document.getElementById('githubUsername').value &&
+                       document.getElementById('repoName').value &&
+                       document.getElementById('filePath').value;
+            } else {
+                return data.sharedConfig && 
+                       data.sharedConfig.username &&
+                       data.sharedConfig.repo &&
+                       data.sharedConfig.path;
+            }
+        }
+
+        function getGithubConfig() {
+            if (userConfig.isAdmin) {
+                return {
+                    username: document.getElementById('githubUsername').value,
+                    repo: document.getElementById('repoName').value,
+                    path: document.getElementById('filePath').value,
+                    token: userConfig.token
+                };
+            } else if (data.sharedConfig) {
+                return {
+                    username: data.sharedConfig.username,
+                    repo: data.sharedConfig.repo,
+                    path: data.sharedConfig.path,
+                    token: userConfig.token
+                };
+            }
+            return null;
+        }
+
+        // GitHub integration
+        async function loadFromGithub(silent = false) {
+            const config = getGithubConfig();
+            
+            if (!config || !config.token) {
+                if (!silent) alert('Please configure your GitHub settings first.');
+                return;
+            }
+
+            if (!silent) updateSyncStatus('syncing', 'Loading...');
+
+            try {
+                const response = await fetch(
+                    `https://api.github.com/repos/${config.username}/${config.repo}/contents/${config.path}`,
+                    {
+                        headers: {
+                            'Authorization': `token ${config.token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    }
+                );
+
+                if (response.ok) {
+                    const fileData = await response.json();
+                    const content = atob(fileData.content);
+                    const loadedData = JSON.parse(content);
+                    
+                    // Merge data
+                    data = { ...data, ...loadedData };
+                    
+                    // Update shared config if present
+                    if (loadedData.sharedConfig) {
+                        data.sharedConfig = loadedData.sharedConfig;
+                        localStorage.setItem('bookClubSharedConfig', JSON.stringify(loadedData.sharedConfig));
+                        
+                        if (!userConfig.isAdmin) {
+                            document.getElementById('githubUsername').value = loadedData.sharedConfig.username || '';
+                            document.getElementById('repoName').value = loadedData.sharedConfig.repo || '';
+                            document.getElementById('filePath').value = loadedData.sharedConfig.path || '';
+                        }
+                    }
+                    
+                    saveLocalData();
+                    updateAllViews();
+                    updateAdminUI();
+                    updateClubName();
+                    
+                    if (!silent) {
+                        updateSyncStatus('success', 'Loaded');
+                        alert('Data loaded from GitHub successfully!');
+                    } else {
+                        updateSyncStatus('success');
+                    }
+                } else if (response.status === 404) {
+                    if (!silent) {
+                        updateSyncStatus('error', 'File not found');
+                        alert('File not found on GitHub. Save your data to create it.');
+                    }
+                } else {
+                    throw new Error(`GitHub API error: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Load error:', error);
+                if (!silent) {
+                    updateSyncStatus('error', 'Load failed');
+                    alert('Error loading from GitHub: ' + error.message);
+                }
+            }
+        }
+
+        async function saveToGithub() {
+            const config = getGithubConfig();
+            
+            if (!config || !config.token) {
+                alert('Please configure your GitHub settings first.');
+                return;
+            }
+
+            updateSyncStatus('syncing', 'Saving...');
+
+            try {
+                // First, try to get the current file to get its SHA
+                let sha = null;
+                try {
+                    const getResponse = await fetch(
+                        `https://api.github.com/repos/${config.username}/${config.repo}/contents/${config.path}`,
+                        {
+                            headers: {
+                                'Authorization': `token ${config.token}`,
+                                'Accept': 'application/vnd.github.v3+json'
+                            }
+                        }
+                    );
+                    if (getResponse.ok) {
+                        const fileData = await getResponse.json();
+                        sha = fileData.sha;
+                    }
+                } catch (e) {
+                    // File doesn't exist yet, that's ok
+                }
+
+                // Prepare data to save
+                const dataToSave = { ...data };
+                const content = btoa(unescape(encodeURIComponent(JSON.stringify(dataToSave, null, 2))));
+
+                const payload = {
+                    message: 'Update book club data',
+                    content: content
+                };
+
+                if (sha) {
+                    payload.sha = sha;
+                }
+
+                const response = await fetch(
+                    `https://api.github.com/repos/${config.username}/${config.repo}/contents/${config.path}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${config.token}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    }
+                );
+
+                if (response.ok) {
+                    updateSyncStatus('success', 'Saved');
+                    saveLocalData();
+                } else {
+                    throw new Error(`GitHub API error: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                updateSyncStatus('error', 'Save failed');
+                alert('Error saving to GitHub: ' + error.message);
+            }
+        }
+
+        // Local storage
+        function loadLocalData() {
+            const saved = localStorage.getItem('bookClubData');
+            if (saved) {
+                data = JSON.parse(saved);
+            }
+        }
+
+        function saveLocalData() {
+            localStorage.setItem('bookClubData', JSON.stringify(data));
+        }
+
+        // Title Lookup
+        async function lookupTitle() {
+            const title = document.getElementById('titleInput').value.trim();
+            
+            if (!title) {
+                alert('Please enter a book title.');
+                return;
+            }
+
+            document.getElementById('titleResult').style.display = 'none';
+            document.getElementById('titleError').style.display = 'none';
+
+            try {
+                // Using Open Library Search API
+                const response = await fetch(`https://openlibrary.org/search.json?title=${encodeURIComponent(title)}&limit=1`);
+                
+                if (!response.ok) {
+                    throw new Error('Network request failed');
+                }
+                
+                const result = await response.json();
+                
+                if (result.docs && result.docs.length > 0) {
+                    const bookData = result.docs[0];
+                    
+                    document.getElementById('foundTitleByTitle').textContent = bookData.title || 'Unknown';
+                    document.getElementById('foundAuthorByTitle').textContent = bookData.author_name ? bookData.author_name.join(', ') : 'Unknown';
+                    document.getElementById('foundYearByTitle').textContent = bookData.first_publish_year || 'Unknown';
+                    document.getElementById('foundISBNByTitle').textContent = bookData.isbn ? bookData.isbn[0] : 'N/A';
+                    
+                    // Store for adding
+                    window.titleBookData = {
+                        title: bookData.title,
+                        author: bookData.author_name ? bookData.author_name.join(', ') : '',
+                        isbn: bookData.isbn ? bookData.isbn[0] : '',
+                        year: bookData.first_publish_year || null
+                    };
+                    
+                    document.getElementById('titleResult').style.display = 'block';
+                } else {
+                    // No results found
+                    showTitleManualEntry(title);
+                }
+            } catch (error) {
+                console.error('Title lookup error:', error);
+                // Network disabled or API error - show manual entry option
+                showTitleManualEntry(title);
+            }
+        }
+
+        function showTitleManualEntry(title) {
+            // Fallback: use the entered title and ask for author
+            const author = prompt(`Book "${title}" not found in database.\n\nPlease enter the author name:`, '');
+            
+            if (author) {
+                document.getElementById('foundTitleByTitle').textContent = title;
+                document.getElementById('foundAuthorByTitle').textContent = author;
+                document.getElementById('foundYearByTitle').textContent = 'Not specified';
+                document.getElementById('foundISBNByTitle').textContent = 'Not specified';
+                
+                window.titleBookData = {
+                    title: title,
+                    author: author,
+                    isbn: '',
+                    year: null
+                };
+                
+                document.getElementById('titleResult').style.display = 'block';
+            } else {
+                alert('Book lookup cancelled. You can add the book manually instead.');
+            }
+        }
+
+        function addBookFromTitle() {
+            if (!window.titleBookData) {
+                alert('No book data available. Please search for a book first.');
+                return;
+            }
+            
+            const book = {
+                id: data.nextId.book++,
+                ...window.titleBookData
+            };
+            
+            data.books.push(book);
+            saveLocalData();
+            updateBookList();
+            populateBookSelects();
+            closeModal('titleLookupModal');
+            saveToGithub();
+            
+            alert('Book added successfully!');
+        }
+
+        // ISBN Lookup
+        async function lookupISBN() {
+            const isbn = document.getElementById('isbnInput').value.trim();
+            
+            if (!isbn) {
+                alert('Please enter an ISBN number.');
+                return;
+            }
+
+            document.getElementById('isbnResult').style.display = 'none';
+            document.getElementById('isbnError').style.display = 'none';
+
+            try {
+                // Using Open Library API
+                const response = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+                const result = await response.json();
+                
+                const bookData = result[`ISBN:${isbn}`];
+                
+                if (bookData) {
+                    document.getElementById('foundTitle').textContent = bookData.title || 'Unknown';
+                    document.getElementById('foundAuthor').textContent = bookData.authors ? bookData.authors.map(a => a.name).join(', ') : 'Unknown';
+                    document.getElementById('foundYear').textContent = bookData.publish_date || 'Unknown';
+                    
+                    // Store for adding
+                    window.isbnBookData = {
+                        title: bookData.title,
+                        author: bookData.authors ? bookData.authors.map(a => a.name).join(', ') : '',
+                        isbn: isbn,
+                        year: bookData.publish_date ? parseInt(bookData.publish_date) : null
+                    };
+                    
+                    document.getElementById('isbnResult').style.display = 'block';
+                } else {
+                    document.getElementById('isbnError').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('ISBN lookup error:', error);
+                document.getElementById('isbnError').style.display = 'block';
+            }
+        }
+
+        function addBookFromISBN() {
+            if (!window.isbnBookData) return;
+            
+            const book = {
+                id: data.nextId.book++,
+                ...window.isbnBookData
+            };
+            
+            data.books.push(book);
+            saveLocalData();
+            updateBookList();
+            populateBookSelects();
+            closeModal('isbnLookupModal');
+            saveToGithub();
+            
+            alert('Book added successfully!');
+        }
+
+        // Import Books
+        function importBooks() {
+            const input = document.getElementById('bookListInput').value.trim();
+            
+            if (!input) {
+                alert('Please paste a book list.');
+                return;
+            }
+
+            const lines = input.split('\n').filter(line => line.trim());
+            const imported = [];
+            const failed = [];
+
+            lines.forEach(line => {
+                line = line.trim();
+                
+                // Try to parse different formats
+                let title, author;
+                
+                if (line.includes(' by ')) {
+                    [title, author] = line.split(' by ');
+                } else if (line.includes(' - ')) {
+                    [title, author] = line.split(' - ');
+                } else {
+                    title = line;
+                    author = 'Unknown';
+                }
+
+                if (title) {
+                    const book = {
+                        id: data.nextId.book++,
+                        title: title.trim(),
+                        author: author ? author.trim() : 'Unknown'
+                    };
+                    
+                    data.books.push(book);
+                    imported.push(book.title);
+                } else {
+                    failed.push(line);
+                }
+            });
+
+            saveLocalData();
+            updateBookList();
+            populateBookSelects();
+
+            // Show results
+            const resultDiv = document.getElementById('importResult');
+            resultDiv.style.display = 'block';
+            
+            let resultHTML = `<div class="success-box"><h4>Import Complete</h4>`;
+            resultHTML += `<p>Successfully imported ${imported.length} book(s)</p>`;
+            
+            if (failed.length > 0) {
+                resultHTML += `<p>Failed to import ${failed.length} line(s)</p>`;
+            }
+            
+            resultHTML += `</div>`;
+            resultDiv.innerHTML = resultHTML;
+
+            saveToGithub();
+
+            if (imported.length > 0) {
+                document.getElementById('bookListInput').value = '';
+            }
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            // Update dropdowns when switching to certain tabs
+            if (tabName === 'meetings') {
+                populateMemberSelect('meetingHost');
+                populateBookSelect('meetingBook', true);
+            } else if (tabName === 'readings') {
+                populateMemberSelects();
+                populateBookSelects();
+            } else if (tabName === 'reviews') {
+                populateMemberSelects();
+                populateBookSelects();
+            } else if (tabName === 'finances') {
+                populateMemberSelect('transactionMember');
+            }
+        }
+
+        // Modal functions
+        function showAddBookModal() {
+            document.getElementById('bookTitle').value = '';
+            document.getElementById('bookAuthor').value = '';
+            document.getElementById('bookISBN').value = '';
+            document.getElementById('bookGenre').value = '';
+            document.getElementById('bookYear').value = '';
+            document.getElementById('addBookModal').style.display = 'block';
+        }
+
+        function showEditBookModal(bookId) {
+            const book = data.books.find(b => b.id === bookId);
+            if (!book) return;
+            
+            document.getElementById('editBookId').value = book.id;
+            document.getElementById('editBookTitle').value = book.title;
+            document.getElementById('editBookAuthor').value = book.author;
+            document.getElementById('editBookISBN').value = book.isbn || '';
+            document.getElementById('editBookGenre').value = book.genre || '';
+            document.getElementById('editBookYear').value = book.year || '';
+            document.getElementById('editBookModal').style.display = 'block';
+        }
+
+        function showISBNLookupModal() {
+            document.getElementById('isbnInput').value = '';
+            document.getElementById('isbnResult').style.display = 'none';
+            document.getElementById('isbnError').style.display = 'none';
+            document.getElementById('isbnLookupModal').style.display = 'block';
+        }
+
+        function showTitleLookupModal() {
+            document.getElementById('titleInput').value = '';
+            document.getElementById('titleResult').style.display = 'none';
+            document.getElementById('titleError').style.display = 'none';
+            document.getElementById('titleLookupModal').style.display = 'block';
+        }
+
+        function showImportBooksModal() {
+            document.getElementById('bookListInput').value = '';
+            document.getElementById('importResult').style.display = 'none';
+            document.getElementById('importBooksModal').style.display = 'block';
+        }
+
+        function showAddMemberModal() {
+            document.getElementById('memberName').value = '';
+            document.getElementById('memberEmail').value = '';
+            document.getElementById('memberIsAdmin').checked = false;
+            document.getElementById('addMemberModal').style.display = 'block';
+        }
+
+        function showEditMemberModal(memberId) {
+            const member = data.members.find(m => m.id === memberId);
+            if (!member) return;
+            
+            document.getElementById('editMemberId').value = member.id;
+            document.getElementById('editMemberName').value = member.name;
+            document.getElementById('editMemberEmail').value = member.email || '';
+            document.getElementById('editMemberIsAdmin').checked = member.isAdmin || false;
+            document.getElementById('editMemberModal').style.display = 'block';
+        }
+
+        function showAddMeetingModal() {
+            populateMemberSelect('meetingHost');
+            populateBookSelect('meetingBook', true);
+            document.getElementById('addMeetingModal').style.display = 'block';
+        }
+
+        function showAddReadingModal() {
+            populateMemberSelects();
+            populateBookSelects();
+            document.getElementById('addReviewCheckbox').checked = false;
+            document.getElementById('addReadingModal').style.display = 'block';
+        }
+
+        function showAddReviewModal(memberId = null, bookId = null) {
+            populateMemberSelects();
+            populateBookSelects();
+            
+            if (memberId) document.getElementById('reviewMember').value = memberId;
+            if (bookId) document.getElementById('reviewBook').value = bookId;
+            
+            document.getElementById('addReviewModal').style.display = 'block';
+        }
+
+        function showAddTransactionModal() {
+            populateMemberSelect('transactionMember');
+            document.getElementById('addTransactionModal').style.display = 'block';
+        }
+
+        function showEditBalanceModal() {
+            if (!userConfig.isAdmin) {
+                alert('Only administrators can edit the balance.');
+                return;
+            }
+
+            const contributions = data.transactions
+                .filter(t => t.type === 'contribution')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const expenses = data.transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const balance = contributions - expenses;
+
+            document.getElementById('currentBalanceDisplay').value = `R ${balance.toFixed(2)}`;
+            document.getElementById('newBalance').value = balance.toFixed(2);
+            document.getElementById('balanceReason').value = '';
+            
+            document.getElementById('editBalanceModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // CRUD functions
+        function addBook(event) {
+            event.preventDefault();
+            
+            const book = {
+                id: data.nextId.book++,
+                title: document.getElementById('bookTitle').value,
+                author: document.getElementById('bookAuthor').value,
+                isbn: document.getElementById('bookISBN').value,
+                genre: document.getElementById('bookGenre').value,
+                year: document.getElementById('bookYear').value ? parseInt(document.getElementById('bookYear').value) : null
+            };
+            
+            data.books.push(book);
+            saveLocalData();
+            updateBookList();
+            populateBookSelects();
+            closeModal('addBookModal');
+            saveToGithub();
+            
+            alert('Book added successfully!');
+        }
+
+        function updateBook(event) {
+            event.preventDefault();
+            
+            const bookId = parseInt(document.getElementById('editBookId').value);
+            const book = data.books.find(b => b.id === bookId);
+            
+            if (!book) {
+                alert('Book not found!');
+                return;
+            }
+            
+            book.title = document.getElementById('editBookTitle').value;
+            book.author = document.getElementById('editBookAuthor').value;
+            book.isbn = document.getElementById('editBookISBN').value;
+            book.genre = document.getElementById('editBookGenre').value;
+            book.year = document.getElementById('editBookYear').value ? parseInt(document.getElementById('editBookYear').value) : null;
+            
+            saveLocalData();
+            updateBookList();
+            populateBookSelects();
+            closeModal('editBookModal');
+            saveToGithub();
+            
+            alert('Book updated successfully!');
+        }
+
+        function deleteBook(id) {
+            if (!confirm('Are you sure you want to delete this book?')) return;
+            
+            data.books = data.books.filter(b => b.id !== id);
+            data.readings = data.readings.filter(r => r.bookId !== id);
+            data.reviews = data.reviews.filter(r => r.bookId !== id);
+            
+            saveLocalData();
+            updateAllViews();
+            saveToGithub();
+        }
+
+        function addMember(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('memberEmail').value.trim();
+            
+            if (!email) {
+                alert('Email is required for member identification.');
+                return;
+            }
+            
+            // Check if email already exists
+            const existingMember = data.members.find(m => m.email && m.email.toLowerCase() === email.toLowerCase());
+            if (existingMember) {
+                alert('A member with this email already exists.');
+                return;
+            }
+            
+            const member = {
+                id: data.nextId.member++,
+                name: document.getElementById('memberName').value,
+                email: email,
+                isAdmin: userConfig.isAdmin ? document.getElementById('memberIsAdmin').checked : false
+            };
+            
+            data.members.push(member);
+            saveLocalData();
+            updateMembersList();
+            populateMemberSelects();
+            closeModal('addMemberModal');
+            saveToGithub();
+            
+            alert('Member added successfully!');
+        }
+
+        function updateMember(event) {
+            event.preventDefault();
+            
+            const memberId = parseInt(document.getElementById('editMemberId').value);
+            const member = data.members.find(m => m.id === memberId);
+            
+            if (!member) {
+                alert('Member not found!');
+                return;
+            }
+            
+            const newEmail = document.getElementById('editMemberEmail').value.trim();
+            
+            if (!newEmail) {
+                alert('Email is required for member identification.');
+                return;
+            }
+            
+            // Check if new email conflicts with another member
+            const existingMember = data.members.find(m => m.id !== memberId && m.email && m.email.toLowerCase() === newEmail.toLowerCase());
+            if (existingMember) {
+                alert('Another member already has this email address.');
+                return;
+            }
+            
+            member.name = document.getElementById('editMemberName').value;
+            member.email = newEmail;
+            
+            if (userConfig.isAdmin) {
+                member.isAdmin = document.getElementById('editMemberIsAdmin').checked;
+            }
+            
+            saveLocalData();
+            updateMembersList();
+            populateMemberSelects();
+            closeModal('editMemberModal');
+            saveToGithub();
+            
+            // If user edited their own email, update their config
+            if (userConfig.email && userConfig.email.toLowerCase() === member.email.toLowerCase()) {
+                userConfig.email = newEmail;
+                localStorage.setItem('bookClubUserConfig', JSON.stringify(userConfig));
+            }
+            
+            alert('Member updated successfully!');
+        }
+
+        function deleteMember(id) {
+            if (!confirm('Are you sure you want to delete this member?')) return;
+            
+            data.members = data.members.filter(m => m.id !== id);
+            
+            saveLocalData();
+            updateMembersList();
+            populateMemberSelects();
+            saveToGithub();
+        }
+
+        function toggleMemberAdmin(id) {
+            if (!userConfig.isAdmin) {
+                alert('Only administrators can grant admin privileges.');
+                return;
+            }
+
+            const member = data.members.find(m => m.id === id);
+            if (member) {
+                member.isAdmin = !member.isAdmin;
+                saveLocalData();
+                updateMembersList();
+                saveToGithub();
+            }
+        }
+
+        function addMeeting(event) {
+            event.preventDefault();
+            
+            const dateValue = document.getElementById('meetingDate').value;
+            const timeValue = document.getElementById('meetingTime').value;
+            
+            // Combine date and time if time is provided
+            let dateTimeString = dateValue;
+            if (timeValue) {
+                dateTimeString += 'T' + timeValue;
+            }
+            
+            const meeting = {
+                id: data.nextId.meeting++,
+                date: dateTimeString,
+                time: timeValue || null,
+                hostId: parseInt(document.getElementById('meetingHost').value),
+                bookId: document.getElementById('meetingBook').value ? parseInt(document.getElementById('meetingBook').value) : null,
+                location: document.getElementById('meetingLocation').value
+            };
+            
+            data.meetings.push(meeting);
+            saveLocalData();
+            updateMeetingsList();
+            closeModal('addMeetingModal');
+            saveToGithub();
+            
+            alert('Meeting scheduled successfully!');
+        }
+
+        function deleteMeeting(id) {
+            if (!confirm('Are you sure you want to delete this meeting?')) return;
+            
+            data.meetings = data.meetings.filter(m => m.id !== id);
+            
+            saveLocalData();
+            updateMeetingsList();
+            saveToGithub();
+        }
+
+        function addReading(event) {
+            event.preventDefault();
+            
+            const memberId = parseInt(document.getElementById('readingMember').value);
+            const bookId = parseInt(document.getElementById('readingBook').value);
+            const addReview = document.getElementById('addReviewCheckbox').checked;
+            
+            const reading = {
+                id: data.nextId.reading++,
+                memberId: memberId,
+                bookId: bookId,
+                dateCompleted: document.getElementById('readingDate').value
+            };
+            
+            data.readings.push(reading);
+            saveLocalData();
+            updateReadingList();
+            closeModal('addReadingModal');
+            saveToGithub();
+            
+            if (addReview) {
+                showAddReviewModal(memberId, bookId);
+            } else {
+                alert('Reading logged successfully!');
+            }
+        }
+
+        function deleteReading(id) {
+            if (!confirm('Are you sure you want to delete this reading?')) return;
+            
+            data.readings = data.readings.filter(r => r.id !== id);
+            
+            saveLocalData();
+            updateReadingList();
+            saveToGithub();
+        }
+
+        function addReview(event) {
+            event.preventDefault();
+            
+            const review = {
+                id: data.nextId.review++,
+                memberId: parseInt(document.getElementById('reviewMember').value),
+                bookId: parseInt(document.getElementById('reviewBook').value),
+                rating: parseInt(document.getElementById('reviewRating').value),
+                text: document.getElementById('reviewText').value,
+                date: new Date().toISOString().split('T')[0]
+            };
+            
+            data.reviews.push(review);
+            saveLocalData();
+            updateReviewsList();
+            closeModal('addReviewModal');
+            saveToGithub();
+            
+            alert('Review added successfully!');
+        }
+
+        function deleteReview(id) {
+            if (!confirm('Are you sure you want to delete this review?')) return;
+            
+            data.reviews = data.reviews.filter(r => r.id !== id);
+            
+            saveLocalData();
+            updateReviewsList();
+            saveToGithub();
+        }
+
+        function addTransaction(event) {
+            event.preventDefault();
+            
+            const transaction = {
+                id: data.nextId.transaction++,
+                type: document.getElementById('transactionType').value,
+                memberId: parseInt(document.getElementById('transactionMember').value),
+                amount: parseFloat(document.getElementById('transactionAmount').value),
+                description: document.getElementById('transactionDescription').value,
+                date: document.getElementById('transactionDate').value
+            };
+            
+            data.transactions.push(transaction);
+            saveLocalData();
+            updateTransactionsList();
+            closeModal('addTransactionModal');
+            saveToGithub();
+            
+            alert('Transaction added successfully!');
+        }
+
+        function deleteTransaction(id) {
+            if (!confirm('Are you sure you want to delete this transaction?')) return;
+            
+            data.transactions = data.transactions.filter(t => t.id !== id);
+            
+            saveLocalData();
+            updateTransactionsList();
+            saveToGithub();
+        }
+
+        function editBalance(event) {
+            event.preventDefault();
+            
+            console.log('editBalance called');
+            console.log('userConfig.isAdmin:', userConfig.isAdmin);
+            console.log('data.members.length:', data.members.length);
+            
+            if (!userConfig.isAdmin) {
+                alert('Only administrators can edit the balance.');
+                return;
+            }
+
+            if (data.members.length === 0) {
+                alert('Please add at least one member before editing the balance.');
+                closeModal('editBalanceModal');
+                return;
+            }
+
+            const contributions = data.transactions
+                .filter(t => t.type === 'contribution')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const expenses = data.transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const currentBalance = contributions - expenses;
+            const newBalanceValue = document.getElementById('newBalance').value;
+            const newBalance = parseFloat(newBalanceValue);
+            
+            console.log('currentBalance:', currentBalance);
+            console.log('newBalance:', newBalance);
+            console.log('newBalanceValue:', newBalanceValue);
+            
+            if (isNaN(newBalance)) {
+                alert('Please enter a valid number for the new balance.');
+                return;
+            }
+            
+            const difference = newBalance - currentBalance;
+            console.log('difference:', difference);
+
+            if (difference !== 0) {
+                const adjustmentTransaction = {
+                    id: data.nextId.transaction++,
+                    type: difference > 0 ? 'contribution' : 'expense',
+                    memberId: data.members[0].id,
+                    amount: Math.abs(difference),
+                    description: `Balance Adjustment: ${document.getElementById('balanceReason').value}`,
+                    date: new Date().toISOString().split('T')[0]
+                };
+                
+                console.log('Adding adjustment transaction:', adjustmentTransaction);
+                
+                data.transactions.push(adjustmentTransaction);
+                saveLocalData();
+                updateTransactionsList();
+                saveToGithub();
+                
+                alert('Balance updated successfully!');
+            } else {
+                alert('New balance is the same as current balance. No adjustment needed.');
+            }
+
+            closeModal('editBalanceModal');
+        }
+
+        // Quick action functions
+        function quickLogReading(bookId) {
+            showAddReadingModal();
+            document.getElementById('readingBook').value = bookId;
+        }
+
+        function quickAddReview(bookId) {
+            showAddReviewModal(null, bookId);
+        }
+
+        // Update functions
+        function updateBookList() {
+            const list = document.getElementById('bookList');
+            
+            if (data.books.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 40px;">No books in library yet.</p>';
+                return;
+            }
+
+            list.innerHTML = data.books.map(book => {
+                const hasReading = data.readings.some(r => r.bookId === book.id);
+                const reviews = data.reviews.filter(r => r.bookId === book.id);
+                const avgRating = reviews.length > 0 
+                    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+                    : null;
+
+                return `
+                    <div class="book-card">
+                        <h3>${book.title}</h3>
+                        <p class="book-info"><strong>Author:</strong> ${book.author}</p>
+                        ${book.isbn ? `<p class="book-info"><strong>ISBN:</strong> ${book.isbn}</p>` : ''}
+                        ${book.genre ? `<p class="book-info"><strong>Genre:</strong> ${book.genre}</p>` : ''}
+                        ${book.year ? `<p class="book-info"><strong>Year:</strong> ${book.year}</p>` : ''}
+                        ${avgRating ? `<p class="book-info"><strong>Average Rating:</strong> ⭐ ${avgRating}/5 (${reviews.length} review${reviews.length !== 1 ? 's' : ''})</p>` : ''}
+                        
+                        <div class="quick-actions">
+                            ${!hasReading ? `<button class="btn btn-small btn-success" onclick="quickLogReading(${book.id})">Log as Read</button>` : ''}
+                            <button class="btn btn-small btn-secondary" onclick="quickAddReview(${book.id})">Add Review</button>
+                            <button class="btn btn-small btn-secondary" onclick="showEditBookModal(${book.id})">Edit</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteBook(${book.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateMembersList() {
+            const list = document.getElementById('membersList');
+            
+            if (data.members.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 40px;">No members yet.</p>';
+                return;
+            }
+
+            list.innerHTML = data.members.map(member => {
+                const readings = data.readings.filter(r => r.memberId === member.id);
+                const reviews = data.reviews.filter(r => r.memberId === member.id);
+
+                return `
+                    <div class="member-section">
+                        <h3>
+                            ${member.name} 
+                            ${member.isAdmin ? '<span style="color: gold;">👑</span>' : ''}
+                        </h3>
+                        ${member.email ? `<p class="book-info">📧 ${member.email}</p>` : ''}
+                        <p class="book-info">📚 ${readings.length} book(s) read • ⭐ ${reviews.length} review(s) written</p>
+                        
+                        <div style="margin-top: 15px;">
+                            <button class="btn btn-small btn-secondary" onclick="showEditMemberModal(${member.id})">Edit</button>
+                            ${userConfig.isAdmin ? `
+                                <button class="btn btn-small btn-secondary" onclick="toggleMemberAdmin(${member.id})">
+                                    ${member.isAdmin ? 'Remove Admin' : 'Make Admin'}
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-small btn-danger" onclick="deleteMember(${member.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateMeetingsList() {
+            const upcomingList = document.getElementById('upcomingMeetings');
+            const pastList = document.getElementById('pastMeetings');
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const upcomingMeetings = data.meetings.filter(m => new Date(m.date) >= today);
+            const pastMeetings = data.meetings.filter(m => new Date(m.date) < today);
+
+            if (upcomingMeetings.length === 0) {
+                upcomingList.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 40px;">No upcoming meetings scheduled.</p>';
+            } else {
+                upcomingList.innerHTML = upcomingMeetings.sort((a, b) => new Date(a.date) - new Date(b.date)).map(meeting => {
+                    const host = data.members.find(m => m.id === meeting.hostId);
+                    const book = meeting.bookId ? data.books.find(b => b.id === meeting.bookId) : null;
+                    
+                    if (!host) return '';
+
+                    const meetingDate = new Date(meeting.date);
+                    const dateStr = meetingDate.toLocaleDateString('en-ZA', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                    
+                    const timeStr = meeting.time ? ` at ${meeting.time}` : '';
+
+                    return `
+                        <div class="book-card">
+                            <h3>${dateStr}${timeStr}</h3>
+                            <p class="book-info"><strong>Host:</strong> ${host.name}</p>
+                            ${book ? `<p class="book-info"><strong>Book:</strong> ${book.title}</p>` : ''}
+                            ${meeting.location ? `<p class="book-info"><strong>Location:</strong> ${meeting.location}</p>` : ''}
+                            <button class="btn btn-danger" onclick="deleteMeeting(${meeting.id})">Delete</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            if (pastMeetings.length === 0) {
+                pastList.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 40px;">No past meetings.</p>';
+            } else {
+                pastList.innerHTML = pastMeetings.sort((a, b) => new Date(b.date) - new Date(a.date)).map(meeting => {
+                    const host = data.members.find(m => m.id === meeting.hostId);
+                    const book = meeting.bookId ? data.books.find(b => b.id === meeting.bookId) : null;
+                    
+                    if (!host) return '';
+
+                    const meetingDate = new Date(meeting.date);
+                    const dateStr = meetingDate.toLocaleDateString('en-ZA', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                    
+                    const timeStr = meeting.time ? ` at ${meeting.time}` : '';
+
+                    return `
+                        <div class="book-card" style="opacity: 0.8;">
+                            <h3>${dateStr}${timeStr}</h3>
+                            <p class="book-info"><strong>Host:</strong> ${host.name}</p>
+                            ${book ? `<p class="book-info"><strong>Book:</strong> ${book.title}</p>` : ''}
+                            ${meeting.location ? `<p class="book-info"><strong>Location:</strong> ${meeting.location}</p>` : ''}
+                            <button class="btn btn-danger" onclick="deleteMeeting(${meeting.id})">Delete</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function updateReadingList() {
+            const list = document.getElementById('readingList');
+            
+            document.getElementById('totalReadings').textContent = data.readings.length;
+            const uniqueBooks = new Set(data.readings.map(r => r.bookId)).size;
+            document.getElementById('uniqueBooks').textContent = uniqueBooks;
+
+            if (data.readings.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 40px;">No readings logged yet.</p>';
+                return;
+            }
+
+            const sortedReadings = [...data.readings].sort((a, b) => 
+                new Date(b.dateCompleted) - new Date(a.dateCompleted)
+            );
+
+            list.innerHTML = sortedReadings.map(reading => {
+                const member = data.members.find(m => m.id === reading.memberId);
+                const book = data.books.find(b => b.id === reading.bookId);
+                
+                if (!member || !book) return '';
+
+                const hasReview = data.reviews.some(r => r.memberId === reading.memberId && r.bookId === reading.bookId);
+
+                return `
+                    <div class="reading-item">
+                        <div>
+                            <strong>${member.name}</strong> read <strong>${book.title}</strong>
+                            <p class="book-info">Completed: ${new Date(reading.dateCompleted).toLocaleDateString()}</p>
+                        </div>
+                        <div>
+                            ${!hasReview ? `<button class="btn btn-small btn-secondary" onclick="quickAddReview(${book.id})">Add Review</button>` : ''}
+                            <button class="btn btn-small btn-danger" onclick="deleteReading(${reading.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateReviewsList() {
+            const tbody = document.getElementById('reviewsTableBody');
+            
+            if (data.reviews.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #6c757d;">
+                            No reviews yet.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Sort reviews
+            const sortedReviews = [...data.reviews].sort((a, b) => {
+                const memberA = data.members.find(m => m.id === a.memberId);
+                const memberB = data.members.find(m => m.id === b.memberId);
+                const bookA = data.books.find(b => b.id === a.bookId);
+                const bookB = data.books.find(b => b.id === b.bookId);
+                
+                let compareValue = 0;
+                
+                switch (reviewSortColumn) {
+                    case 'book':
+                        const titleA = bookA ? bookA.title.toLowerCase() : '';
+                        const titleB = bookB ? bookB.title.toLowerCase() : '';
+                        compareValue = titleA.localeCompare(titleB);
+                        break;
+                    case 'reviewer':
+                        const nameA = memberA ? memberA.name.toLowerCase() : '';
+                        const nameB = memberB ? memberB.name.toLowerCase() : '';
+                        compareValue = nameA.localeCompare(nameB);
+                        break;
+                    case 'rating':
+                        compareValue = a.rating - b.rating;
+                        break;
+                    case 'date':
+                        compareValue = new Date(a.date) - new Date(b.date);
+                        break;
+                }
+                
+                return reviewSortDirection === 'asc' ? compareValue : -compareValue;
+            });
+
+            // Update sort indicators
+            document.querySelectorAll('.reviews-table th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            const activeHeader = document.querySelector(`.reviews-table th[onclick*="${reviewSortColumn}"]`);
+            if (activeHeader) {
+                activeHeader.classList.add(reviewSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+
+            tbody.innerHTML = sortedReviews.map(review => {
+                const member = data.members.find(m => m.id === review.memberId);
+                const book = data.books.find(b => b.id === review.bookId);
+                
+                if (!member || !book) return '';
+
+                const stars = '⭐'.repeat(review.rating);
+                const reviewId = `review-${review.id}`;
+                const shortText = review.text.length > 100 ? review.text.substring(0, 100) + '...' : review.text;
+                const needsExpand = review.text.length > 100;
+
+                return `
+                    <tr>
+                        <td><strong>${book.title}</strong><br><small style="color: #6c757d;">${book.author}</small></td>
+                        <td>${member.name}</td>
+                        <td><span class="rating">${stars}</span><br><small>${review.rating}/5</small></td>
+                        <td class="review-text-cell">
+                            <div class="review-text-preview" id="${reviewId}-preview">${shortText}</div>
+                            ${needsExpand ? `
+                                <div style="display: none;" id="${reviewId}-full">${review.text}</div>
+                                <span class="review-expand-btn" onclick="toggleReviewText('${reviewId}')">Read more</span>
+                            ` : ''}
+                        </td>
+                        <td>${new Date(review.date).toLocaleDateString()}</td>
+                        <td class="review-actions">
+                            <button class="btn btn-small btn-danger" onclick="deleteReview(${review.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function sortReviews(column) {
+            if (reviewSortColumn === column) {
+                // Toggle direction if same column
+                reviewSortDirection = reviewSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                // New column, default to ascending
+                reviewSortColumn = column;
+                reviewSortDirection = 'asc';
+            }
+            
+            updateReviewsList();
+        }
+
+        function toggleReviewText(reviewId) {
+            const preview = document.getElementById(`${reviewId}-preview`);
+            const full = document.getElementById(`${reviewId}-full`);
+            const btn = preview.nextElementSibling.nextElementSibling;
+            
+            if (full.style.display === 'none') {
+                preview.style.display = 'none';
+                full.style.display = 'block';
+                btn.textContent = 'Show less';
+            } else {
+                preview.style.display = 'block';
+                full.style.display = 'none';
+                btn.textContent = 'Read more';
+            }
+        }
+
+        function updateTransactionsList() {
+            const list = document.getElementById('transactionsList');
+            
+            const contributions = data.transactions
+                .filter(t => t.type === 'contribution')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const expenses = data.transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const balance = contributions - expenses;
+
+            document.getElementById('totalContributions').textContent = `R ${contributions.toFixed(2)}`;
+            document.getElementById('totalExpenses').textContent = `R ${expenses.toFixed(2)}`;
+            document.getElementById('balance').textContent = `R ${balance.toFixed(2)}`;
+
+            if (data.transactions.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 40px;">No transactions yet.</p>';
+                return;
+            }
+
+            const sortedTransactions = [...data.transactions].sort((a, b) => 
+                new Date(b.date) - new Date(a.date)
+            );
+
+            list.innerHTML = sortedTransactions.map(transaction => {
+                const member = data.members.find(m => m.id === transaction.memberId);
+                if (!member) return '';
+
+                const isExpense = transaction.type === 'expense';
+
+                return `
+                    <div class="transaction-item ${isExpense ? 'expense' : ''}">
+                        <div>
+                            <strong>${transaction.description}</strong>
+                            <p class="book-info">${member.name} • ${new Date(transaction.date).toLocaleDateString()}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong style="font-size: 1.2em; color: ${isExpense ? '#dc3545' : '#28a745'};">
+                                ${isExpense ? '-' : '+'}R ${transaction.amount.toFixed(2)}
+                            </strong>
+                            <br>
+                            <button class="btn btn-small btn-danger" onclick="deleteTransaction(${transaction.id})" style="margin-top: 10px;">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function populateMemberSelects() {
+            const selects = ['readingMember', 'reviewMember', 'transactionMember'];
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    select.innerHTML = '<option value="">Select a member...</option>' +
+                        data.members.map(member => 
+                            `<option value="${member.id}">${member.name}</option>`
+                        ).join('');
+                }
+            });
+        }
+
+        function populateMemberSelect(selectId) {
+            const select = document.getElementById(selectId);
+            if (select) {
+                select.innerHTML = '<option value="">Select a member...</option>' +
+                    data.members.map(member => 
+                        `<option value="${member.id}">${member.name}</option>`
+                    ).join('');
+            }
+        }
+
+        function populateBookSelects() {
+            const selects = ['readingBook', 'reviewBook'];
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    select.innerHTML = '<option value="">Select a book...</option>' +
+                        data.books.map(book => 
+                            `<option value="${book.id}">${book.title} by ${book.author}</option>`
+                        ).join('');
+                }
+            });
+        }
+
+        function populateBookSelect(selectId, includeNone = false) {
+            const select = document.getElementById(selectId);
+            if (select) {
+                let options = includeNone ? '<option value="">No specific book</option>' : '<option value="">Select a book...</option>';
+                options += data.books.map(book => 
+                    `<option value="${book.id}">${book.title} by ${book.author}</option>`
+                ).join('');
+                select.innerHTML = options;
+            }
+        }
+
+        function updateAllViews() {
+            updateBookList();
+            updateMembersList();
+            updateMeetingsList();
+            updateReadingList();
+            updateReviewsList();
+            updateTransactionsList();
+        }
+
+        // Search/filter functions
+        function filterLibrary() {
+            const search = document.getElementById('librarySearch').value.toLowerCase();
+            const cards = document.querySelectorAll('#bookList .book-card');
+            
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(search) ? 'block' : 'none';
+            });
+        }
+
+        function filterReadings() {
+            const search = document.getElementById('readingSearch').value.toLowerCase();
+            const items = document.querySelectorAll('.reading-item');
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(search) ? 'flex' : 'none';
+            });
+        }
+
+        function filterReviews() {
+            const search = document.getElementById('reviewSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#reviewsTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(search) ? '' : 'none';
+            });
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // Initialize app on load
+        initializeApp();
+    </script>
+</body>
+</html>
