@@ -613,21 +613,31 @@
                 </ul>
             </div>
 
+            <div class="success-box" id="sharedConfigLoadedBox" style="display: none;">
+                <h4>✅ Ready to Log In!</h4>
+                <p>Your club is set up and ready. Just enter your email address below to log in!</p>
+            </div>
+
+            <div class="warning-box" id="noSharedConfigBox" style="display: none;">
+                <h4>⚠️ Club Not Set Up Yet</h4>
+                <p>Your club administrator needs to complete the setup in the Admin Setup tab before members can log in.</p>
+            </div>
+
             <div class="warning-box">
-                <h4>👤 Important: Identifying Yourself</h4>
-                <p><strong>The app identifies you by your email address.</strong> Once you enter your email below, the app will:</p>
+                <h4>👤 Important: How Login Works</h4>
+                <p><strong>The app identifies you by your email address.</strong> Once you enter your email, the app will:</p>
                 <ul style="margin-left: 20px; margin-top: 10px;">
                     <li>Check if you exist as a member in the club</li>
                     <li>Automatically determine if you have admin privileges</li>
                     <li>Save your email locally so you don't have to re-enter it</li>
                 </ul>
-                <p style="margin-top: 10px;"><strong>Note:</strong> You must be added as a member by an admin before you can use the app. The first user to set up the repository becomes the initial admin.</p>
+                <p style="margin-top: 10px;"><strong>Note:</strong> You must be added as a member by an admin before you can log in.</p>
             </div>
 
             <div id="loginUserRoleInfo" style="margin-top: 20px;">
                 <div class="success-box" id="roleInfoBox" style="display: none;">
                     <h4>✅ Logged in as: <span id="loginCurrentRole">Standard User</span></h4>
-                    <p id="roleDescription">You only need to enter your personal access token below.</p>
+                    <p id="roleDescription">Welcome to the book club!</p>
                 </div>
             </div>
 
@@ -639,11 +649,11 @@
                 </small>
             </div>
 
-            <div class="form-group">
-                <label>Your Personal Access Token *</label>
-                <input type="password" id="loginGithubToken" placeholder="ghp_xxxxxxxxxxxx">
+            <div class="form-group" id="adminTokenContainer" style="display: none;">
+                <label>Your Personal GitHub Token (Admin Only) *</label>
+                <input type="password" id="adminGithubToken" placeholder="ghp_xxxxxxxxxxxx">
                 <small style="color: #6c757d; display: block; margin-top: 5px;">
-                    This is stored locally on your device and never shared. Get one from GitHub: Settings → Developer settings → Personal access tokens
+                    As an admin, you need your own token to configure settings. This is separate from the shared token.
                 </small>
             </div>
 
@@ -657,7 +667,7 @@
                 </small>
             </div>
 
-            <button class="btn" onclick="saveLoginConfig()">Save & Login</button>
+            <button class="btn" onclick="saveLoginConfig()">Log In</button>
             <button class="btn btn-secondary" onclick="loadFromGithub()">Manual Sync: Load from GitHub</button>
             <button class="btn btn-secondary" onclick="saveToGithub()">Manual Sync: Save to GitHub</button>
 
@@ -828,6 +838,14 @@
             <div class="form-group">
                 <label>File Path</label>
                 <input type="text" id="filePath" placeholder="data/bookclub.json" value="data/bookclub.json">
+            </div>
+
+            <div class="form-group">
+                <label>Shared Access Token (for all members)</label>
+                <input type="password" id="sharedToken" placeholder="ghp_xxxxxxxxxxxx">
+                <small style="color: #6c757d; display: block; margin-top: 5px;">
+                    This token will be used by all members to access the repository. Members won't need to create their own tokens!
+                </small>
             </div>
 
             <button class="btn" onclick="saveSharedConfig()">Save Admin Settings</button>
@@ -1256,7 +1274,7 @@ To Kill a Mockingbird by Harper Lee"></textarea>
         // User-specific configuration
         let userConfig = {
             email: '',
-            token: '',
+            adminToken: '',  // Only for admins
             isAdmin: false
         };
 
@@ -1278,6 +1296,12 @@ To Kill a Mockingbird by Harper Lee"></textarea>
             document.getElementById('readingDate').value = today;
             document.getElementById('transactionDate').value = today;
 
+            // Try to auto-load shared config from GitHub if we have any token available
+            // This ensures settings populate even for new browsers/devices
+            if (userConfig.adminToken || (data.sharedConfig && data.sharedConfig.sharedToken)) {
+                loadFromGithub(true); // Silent load to get shared settings
+            }
+            
             // Try to auto-sync if configured
             if (isConfigured()) {
                 autoSync();
@@ -1328,7 +1352,7 @@ To Kill a Mockingbird by Harper Lee"></textarea>
             if (saved) {
                 userConfig = JSON.parse(saved);
                 document.getElementById('userEmail').value = userConfig.email || '';
-                document.getElementById('loginGithubToken').value = userConfig.token || '';
+                document.getElementById('adminGithubToken').value = userConfig.adminToken || '';
                 document.getElementById('loginIsAdminCheckbox').checked = userConfig.isAdmin || false;
             }
 
@@ -1340,34 +1364,35 @@ To Kill a Mockingbird by Harper Lee"></textarea>
                     document.getElementById('githubUsername').value = data.sharedConfig.username || '';
                     document.getElementById('repoName').value = data.sharedConfig.repo || '';
                     document.getElementById('filePath').value = data.sharedConfig.path || '';
+                    // Note: We don't populate the sharedToken field for security
                 }
             }
         }
 
         function saveLoginConfig() {
             const email = document.getElementById('userEmail').value.trim();
-            const token = document.getElementById('loginGithubToken').value.trim();
             
             if (!email) {
                 alert('Please enter your email address.');
                 return;
             }
             
-            if (!token) {
-                alert('Please enter your GitHub personal access token.');
-                return;
-            }
-            
             userConfig.email = email;
-            userConfig.token = token;
             
             // Check if this is first-time setup
             const isFirstTime = data.members.length === 0 && document.getElementById('loginIsAdminCheckbox').checked;
             
             if (isFirstTime) {
+                // First-time admin setup
+                const adminToken = document.getElementById('adminGithubToken').value.trim();
+                if (!adminToken) {
+                    alert('As the initial admin, you need to enter your personal GitHub token.');
+                    return;
+                }
+                userConfig.adminToken = adminToken;
                 userConfig.isAdmin = true;
             } else {
-                // Look up user in members list
+                // Regular login - check if user exists in members list
                 const member = data.members.find(m => m.email && m.email.toLowerCase() === email.toLowerCase());
                 
                 if (!member) {
@@ -1377,6 +1402,20 @@ To Kill a Mockingbird by Harper Lee"></textarea>
                 
                 // Set admin status based on member record
                 userConfig.isAdmin = member.isAdmin || false;
+                
+                // If they're an admin, they can optionally provide their own token
+                if (userConfig.isAdmin) {
+                    const adminToken = document.getElementById('adminGithubToken').value.trim();
+                    if (adminToken) {
+                        userConfig.adminToken = adminToken;
+                    }
+                }
+                
+                // Check if shared token is configured
+                if (!data.sharedConfig || !data.sharedConfig.sharedToken) {
+                    alert('The club administrator needs to configure the shared access token in the Admin Setup tab first.');
+                    return;
+                }
             }
             
             localStorage.setItem('bookClubUserConfig', JSON.stringify(userConfig));
@@ -1395,6 +1434,14 @@ To Kill a Mockingbird by Harper Lee"></textarea>
 
         function toggleAdminModeLogin() {
             userConfig.isAdmin = document.getElementById('loginIsAdminCheckbox').checked;
+            const adminTokenContainer = document.getElementById('adminTokenContainer');
+            
+            if (userConfig.isAdmin) {
+                adminTokenContainer.style.display = 'block';
+            } else {
+                adminTokenContainer.style.display = 'none';
+            }
+            
             updateAdminUI();
             updateLoginStatus();
         }
@@ -1408,6 +1455,20 @@ To Kill a Mockingbird by Harper Lee"></textarea>
             const roleText = document.getElementById('loginCurrentRole');
             const roleDescription = document.getElementById('roleDescription');
             const adminCheckboxContainer = document.getElementById('adminCheckboxContainer');
+            const sharedConfigLoadedBox = document.getElementById('sharedConfigLoadedBox');
+            const noSharedConfigBox = document.getElementById('noSharedConfigBox');
+            
+            // Show/hide shared config status messages
+            if (hasSharedConfig) {
+                if (sharedConfigLoadedBox) sharedConfigLoadedBox.style.display = 'block';
+                if (noSharedConfigBox) noSharedConfigBox.style.display = 'none';
+            } else {
+                if (sharedConfigLoadedBox) sharedConfigLoadedBox.style.display = 'none';
+                if (noSharedConfigBox && data.members.length > 0) {
+                    // Only show warning if members exist (meaning setup is in progress)
+                    noSharedConfigBox.style.display = 'block';
+                }
+            }
             
             // Hide admin checkbox if shared config exists and user is not already admin
             if (hasSharedConfig && !isAdmin) {
@@ -1478,10 +1539,26 @@ To Kill a Mockingbird by Harper Lee"></textarea>
                 return;
             }
 
+            const username = document.getElementById('githubUsername').value;
+            const repo = document.getElementById('repoName').value;
+            const path = document.getElementById('filePath').value;
+            const sharedToken = document.getElementById('sharedToken').value;
+
+            if (!username || !repo || !path) {
+                alert('Please fill in GitHub Username, Repository Name, and File Path.');
+                return;
+            }
+
+            if (!sharedToken) {
+                alert('Please enter the shared access token that all members will use.');
+                return;
+            }
+
             const sharedConfig = {
-                username: document.getElementById('githubUsername').value,
-                repo: document.getElementById('repoName').value,
-                path: document.getElementById('filePath').value
+                username: username,
+                repo: repo,
+                path: path,
+                sharedToken: sharedToken  // Store in GitHub data file
             };
 
             data.sharedConfig = sharedConfig;
@@ -1493,7 +1570,7 @@ To Kill a Mockingbird by Harper Lee"></textarea>
             // Save to GitHub so other users can access it
             saveToGithub();
             
-            alert('Admin settings saved and will be shared with all users!');
+            alert('Admin settings saved! Members can now log in with just their email address.');
         }
 
         function updateAdminUI() {
@@ -1524,36 +1601,64 @@ To Kill a Mockingbird by Harper Lee"></textarea>
         }
 
         function isConfigured() {
-            if (!userConfig.token) return false;
+            // Check if shared config exists with shared token
+            if (data.sharedConfig && 
+                data.sharedConfig.username && 
+                data.sharedConfig.repo && 
+                data.sharedConfig.path &&
+                data.sharedConfig.sharedToken) {
+                return true;
+            }
             
-            if (userConfig.isAdmin) {
+            // For first-time admin setup
+            if (userConfig.isAdmin && userConfig.adminToken) {
                 return document.getElementById('githubUsername').value &&
                        document.getElementById('repoName').value &&
                        document.getElementById('filePath').value;
-            } else {
-                return data.sharedConfig && 
-                       data.sharedConfig.username &&
-                       data.sharedConfig.repo &&
-                       data.sharedConfig.path;
             }
+            
+            return false;
         }
 
         function getGithubConfig() {
-            if (userConfig.isAdmin) {
-                return {
-                    username: document.getElementById('githubUsername').value,
-                    repo: document.getElementById('repoName').value,
-                    path: document.getElementById('filePath').value,
-                    token: userConfig.token
-                };
-            } else if (data.sharedConfig) {
+            // First try to use shared config if available
+            if (data.sharedConfig && data.sharedConfig.username && data.sharedConfig.repo && data.sharedConfig.path) {
+                // Determine which token to use
+                let token;
+                if (userConfig.isAdmin && userConfig.adminToken) {
+                    // Admin with their own token
+                    token = userConfig.adminToken;
+                } else if (data.sharedConfig.sharedToken) {
+                    // Use shared token
+                    token = data.sharedConfig.sharedToken;
+                } else {
+                    return null;
+                }
+                
                 return {
                     username: data.sharedConfig.username,
                     repo: data.sharedConfig.repo,
                     path: data.sharedConfig.path,
-                    token: userConfig.token
+                    token: token
                 };
             }
+            
+            // Fall back to form fields (for admins setting up initially)
+            if (userConfig.isAdmin && userConfig.adminToken) {
+                const username = document.getElementById('githubUsername').value;
+                const repo = document.getElementById('repoName').value;
+                const path = document.getElementById('filePath').value;
+                
+                if (username && repo && path) {
+                    return {
+                        username: username,
+                        repo: repo,
+                        path: path,
+                        token: userConfig.adminToken
+                    };
+                }
+            }
+            
             return null;
         }
 
@@ -1592,17 +1697,17 @@ To Kill a Mockingbird by Harper Lee"></textarea>
                         data.sharedConfig = loadedData.sharedConfig;
                         localStorage.setItem('bookClubSharedConfig', JSON.stringify(loadedData.sharedConfig));
                         
-                        if (!userConfig.isAdmin) {
-                            document.getElementById('githubUsername').value = loadedData.sharedConfig.username || '';
-                            document.getElementById('repoName').value = loadedData.sharedConfig.repo || '';
-                            document.getElementById('filePath').value = loadedData.sharedConfig.path || '';
-                        }
+                        // Populate the setup fields for everyone (not just non-admins)
+                        document.getElementById('githubUsername').value = loadedData.sharedConfig.username || '';
+                        document.getElementById('repoName').value = loadedData.sharedConfig.repo || '';
+                        document.getElementById('filePath').value = loadedData.sharedConfig.path || '';
                     }
                     
                     saveLocalData();
                     updateAllViews();
                     updateAdminUI();
                     updateClubName();
+                    updateLoginStatus();
                     
                     if (!silent) {
                         updateSyncStatus('success', 'Loaded');
